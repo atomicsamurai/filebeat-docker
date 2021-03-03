@@ -2,8 +2,8 @@
 
 # This creates filebeat configuration file based on environment variables
 
-# set -x
-set -e
+set -x
+# set -e
 
 # if [[ $# -ne 2 ]]; then
 #     echo "Run filebeat for ForgeRock ID Cloud"
@@ -15,15 +15,12 @@ set -e
 
 # get the directory where this script is
 # DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-DIR=/
 
-# DATE=$(date '+%Y%m%d%H%M%S')
-
-cd ${DIR}
+cd /opt/filebeat
 
 TEMPLATE_FILE="filebeat.yml.template"
 CONFIG_FILE="filebeat.yml"
-/bin/cat <<EOM >$TEMPLATE_FILE
+cat >$TEMPLATE_FILE <<EOF
 - type: httpjson
   config_version: 2
   request.url: ##ORIGIN##/monitoring/logs/tail
@@ -44,16 +41,17 @@ CONFIG_FILE="filebeat.yml"
   response.split:
     target: body.result
     type: array
-EOM
+EOF
 
+# cat $TEMPLATE_FILE
 echo "filebeat.inputs:" >$CONFIG_FILE # this starts a new CONFIG_FILE
 
 # source ${ENVFILE}
 CREDENTIALS=$(echo -n "${API_KEY_ID}:${API_KEY_SECRET}" | base64 -w 0)
 
-for LOG_SOURCE in $(echo $LOG_SOURCES | sed "s/,/ /g"); do
-    echo "$LOG_SOURCE"
-    sed -e "s@##ORIGIN##@$ORIGIN@g" -e "s@##CREDENTIALS##@$CREDENTIALS@g" -e "s@##LOG_SOURCE##@$LOG_SOURCE@g" $TEMPLATE_FILE >>filebeat.yml
+for SOURCE in $(echo $LOG_SOURCE | sed "s/,/ /g"); do
+    echo "$SOURCE"
+    sed -e "s@##ORIGIN##@$ORIGIN@g" -e "s@##CREDENTIALS##@$CREDENTIALS@g" -e "s@##LOG_SOURCE##@$SOURCE@g" $TEMPLATE_FILE >>$CONFIG_FILE
 done
 
 echo "output.logstash:" >>$CONFIG_FILE

@@ -14,14 +14,15 @@ RUN set -x && \
   cd /opt && \
   echo "${FILEBEAT_SHA1} filebeat.tar.gz" | sha512sum -c - && \
   tar xzvf filebeat.tar.gz && \
-  cd filebeat-* && \
-  cp filebeat /bin && \
+#   cd filebeat-${FILEBEAT_VERSION}-linux-x86_64 && \
+#   cp filebeat /bin && \
   cd /opt && \
-  rm -rf filebeat* && \
+  mv filebeat-${FILEBEAT_VERSION}-linux-x86_64 filebeat && \
+#   rm -rf filebeat* && \
   apt-get purge -y wget && \
   apt-get autoremove -y && \
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD [ "filebeat", "-e", "-c", "/filebeat.yml" ]
+CMD [ "/opt/filebeat/filebeat", "-e", "-c", "/opt/filebeat/filebeat.yml" ]
