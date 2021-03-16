@@ -9,7 +9,7 @@ ENV FILEBEAT_VERSION=7.11.1 \
 
 RUN set -x && \
   apt-get update && \
-  apt-get install -y wget && \
+  apt-get install -y wget curl vim nmap net-tools && \
   wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-${FILEBEAT_VERSION}-linux-x86_64.tar.gz -O /opt/filebeat.tar.gz && \
   cd /opt && \
   echo "${FILEBEAT_SHA1} filebeat.tar.gz" | sha512sum -c - && \

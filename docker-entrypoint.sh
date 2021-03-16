@@ -2,7 +2,7 @@
 
 # This creates filebeat configuration file based on environment variables
 
-set -x
+# set -x
 # set -e
 
 cd /opt/filebeat
@@ -43,10 +43,40 @@ processors:
       target: ""
       overwrite_keys: true
       add_error_key: true
+#   - timestamp:
+#       field: timestamp
+#       layouts:
+#         - '2021-03-16T16:39:40.999999999Z'
+#       test:
+#         - '2021-03-16T16:39:40.410894588Z'
+  - drop_fields:
+      fields: [timestamp]
   - if:
       contains:
         type: "json"
     then:
+      - drop_event:
+          when:
+            equals:
+              payload.userId: "id=amadmin,ou=user,ou=am-config"
+      - extract_array:
+          field: payload.http.request.headers.x-forwarded-for
+          fail_on_error: false
+          ignore_missing: true
+          mappings:
+            payload.http.request.headers.x-forwarded-for-extracted: 0
+      - dissect:
+          tokenizer: "%{payload.http.request.client_ip}, %{ip2}, %{ip3}"
+          field: "payload.http.request.headers.x-forwarded-for-extracted"
+          target_prefix: ""
+          ignore_failure: true
+          trim_values: all
+      - extract_array:
+          field: payload.http.request.headers.user-agent
+          fail_on_error: false
+          ignore_missing: true
+          mappings:
+            payload.http.request.headers.user-agent-extracted: 0
       - rename:
           fields:
             - from: "payload"
@@ -62,6 +92,7 @@ processors:
           fail_on_error: true
 output.elasticsearch:
   hosts: ["http://elk:9200"]
+  pipeline: geoip-and-useragent
 setup.template:
   type: "index"
   append_fields:
@@ -69,6 +100,8 @@ setup.template:
       type: object
     - name: text_payload
       type: text
+    - name: geoip.location
+      type: geo_point
 EOF
 
 # set values in config file from env vars
@@ -81,6 +114,21 @@ sed \
 
 #./filebeat -e -c $CONFIG_FILE
 #rm -f $CONFIG_FILE
+
+# wait for Kibana
+if [ -z "$KIBANA_URL" ]; then
+    KIBANA_URL=http://elk:5601
+fi
+counter=0
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${KIBANA_URL}/api/status)" != "200" && $counter -lt 30 ]]; do
+    sleep 1
+    ((counter++))
+    echo "waiting for Kibana to respond ($counter/30)"
+done
+if [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${KIBANA_URL}/api/status)" != "200" ]]; then
+    echo "Timed out waiting for Kibana to respond. Exiting."
+    exit 1
+fi
 
 # Add filebeat as command if needed
 if [ "${1:0:1}" = '-' ]; then
