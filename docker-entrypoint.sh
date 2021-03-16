@@ -5,29 +5,19 @@
 set -x
 # set -e
 
-# if [[ $# -ne 2 ]]; then
-#     echo "Run filebeat for ForgeRock ID Cloud"
-#     echo "Usage: $0 <env file name> <comma separaeted sources>"
-#     exit 1
-# fi
-# ENVFILE=$1
-# LOG_SOURCES=$2
-
-# get the directory where this script is
-# DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
 cd /opt/filebeat
 
 TEMPLATE_FILE="filebeat.yml.template"
 CONFIG_FILE="filebeat.yml"
 cat >$TEMPLATE_FILE <<EOF
+filebeat.inputs:
 - type: httpjson
   config_version: 2
   request.url: ##ORIGIN##/monitoring/logs/tail
+  auth.basic:
+    user: ##API_KEY_ID##
+    password: ##API_KEY_SECRET##
   request.transforms:
-    - set:
-        target: header.Authorization
-        value: 'Basic ##CREDENTIALS##'
     - set:
         target: url.params.source
         value: '##LOG_SOURCE##'
@@ -41,21 +31,53 @@ cat >$TEMPLATE_FILE <<EOF
   response.split:
     target: body.result
     type: array
+    transforms:
+      - set:
+          target: body.tenant
+          value: '##ORIGIN##'
+processors:
+  - decode_json_fields:
+      fields: ["message"]
+      process_array: true
+      max_depth: 5
+      target: ""
+      overwrite_keys: true
+      add_error_key: true
+  - if:
+      contains:
+        type: "json"
+    then:
+      - rename:
+          fields:
+            - from: "payload"
+              to: "json_payload"
+          ignore_missing: false
+          fail_on_error: true
+    else:
+      - rename:
+          fields:
+            - from: "payload"
+              to: "text_payload"
+          ignore_missing: false
+          fail_on_error: true
+output.elasticsearch:
+  hosts: ["http://elk:9200"]
+setup.template:
+  type: "index"
+  append_fields:
+    - name: json_payload
+      type: object
+    - name: text_payload
+      type: text
 EOF
 
-# cat $TEMPLATE_FILE
-echo "filebeat.inputs:" >$CONFIG_FILE # this starts a new CONFIG_FILE
-
-# source ${ENVFILE}
-CREDENTIALS=$(echo -n "${API_KEY_ID}:${API_KEY_SECRET}" | base64 -w 0)
-
-for SOURCE in $(echo $LOG_SOURCE | sed "s/,/ /g"); do
-    echo "$SOURCE"
-    sed -e "s@##ORIGIN##@$ORIGIN@g" -e "s@##CREDENTIALS##@$CREDENTIALS@g" -e "s@##LOG_SOURCE##@$SOURCE@g" $TEMPLATE_FILE >>$CONFIG_FILE
-done
-
-echo "output.logstash:" >>$CONFIG_FILE
-echo "  hosts: ["elk:5044"]" >>$CONFIG_FILE # elk is the service name for elk docker container in docker-compose
+# set values in config file from env vars
+sed \
+    -e "s@##ORIGIN##@$ORIGIN@g" \
+    -e "s@##API_KEY_ID##@$API_KEY_ID@g" \
+    -e "s@##API_KEY_SECRET##@$API_KEY_SECRET@g" \
+    -e "s@##LOG_SOURCE##@$LOG_SOURCE@g" \
+    $TEMPLATE_FILE >>$CONFIG_FILE
 
 #./filebeat -e -c $CONFIG_FILE
 #rm -f $CONFIG_FILE
