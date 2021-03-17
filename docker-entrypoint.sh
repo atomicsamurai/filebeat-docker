@@ -43,18 +43,26 @@ processors:
       target: ""
       overwrite_keys: true
       add_error_key: true
-#   - timestamp:
-#       field: timestamp
-#       layouts:
-#         - '2021-03-16T16:39:40.999999999Z'
-#       test:
-#         - '2021-03-16T16:39:40.410894588Z'
+  - timestamp:
+      field: timestamp
+      ignore_failure: false
+      layouts:
+        - '2006-01-02T15:04:05.999999999Z'
+      test:
+        - '2021-03-16T16:39:40.410894588Z'
   - drop_fields:
-      fields: [timestamp]
+      fields: ["timestamp"]
   - if:
       contains:
-        type: "json"
+        type: "text"
     then:
+      - rename:
+          fields:
+            - from: "payload"
+              to: "text_payload"
+          ignore_missing: false
+          fail_on_error: true
+    else:
       - drop_event:
           when:
             equals:
@@ -66,12 +74,19 @@ processors:
           mappings:
             payload.http.request.headers.x-forwarded-for-extracted: 0
       - dissect:
+          when:
+            has_fields: ['payload.http.request.client_ip']
           tokenizer: "%{payload.http.request.client_ip}, %{ip2}, %{ip3}"
           field: "payload.http.request.headers.x-forwarded-for-extracted"
           target_prefix: ""
           ignore_failure: true
           trim_values: all
+      - drop_fields:
+          fields: ["ip2", "ip3"]
+          ignore_missing: true
       - extract_array:
+          when:
+            has_fields: ['payload.http.request.headers.user-agent']
           field: payload.http.request.headers.user-agent
           fail_on_error: false
           ignore_missing: true
@@ -81,13 +96,6 @@ processors:
           fields:
             - from: "payload"
               to: "json_payload"
-          ignore_missing: false
-          fail_on_error: true
-    else:
-      - rename:
-          fields:
-            - from: "payload"
-              to: "text_payload"
           ignore_missing: false
           fail_on_error: true
 output.elasticsearch:
@@ -120,10 +128,11 @@ if [ -z "$KIBANA_URL" ]; then
     KIBANA_URL=http://elk:5601
 fi
 counter=0
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${KIBANA_URL}/api/status)" != "200" && $counter -lt 30 ]]; do
+echo "Will wait for 60s for Kibana to start ..."
+while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${KIBANA_URL}/api/status)" != "200" && $counter -lt 60 ]]; do
     sleep 1
     ((counter++))
-    echo "waiting for Kibana to respond ($counter/30)"
+    echo "waiting for Kibana to respond ($counter/60)"
 done
 if [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${KIBANA_URL}/api/status)" != "200" ]]; then
     echo "Timed out waiting for Kibana to respond. Exiting."
