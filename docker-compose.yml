@@ -18,7 +18,7 @@ services:
     image: sandeepc0/filebeat-fidc
     container_name: filebeat-forgerock-idcloud
     environment:
-      TOGGLE_FOR_RESTART: "no"
+      TOGGLE_FOR_RESTART: "yes"
       ORIGIN: "${ORIGIN}"
       API_KEY_ID: "${API_KEY_ID}"
       API_KEY_SECRET: "${API_KEY_SECRET}"

@@ -68,6 +68,8 @@ processors:
             equals:
               payload.userId: "id=amadmin,ou=user,ou=am-config"
       - extract_array:
+          when:
+            has_fields: ['payload.http.request.headers.x-forwarded-for']
           field: payload.http.request.headers.x-forwarded-for
           fail_on_error: false
           ignore_missing: true
@@ -75,15 +77,12 @@ processors:
             payload.http.request.headers.x-forwarded-for-extracted: 0
       - dissect:
           when:
-            has_fields: ['payload.http.request.client_ip']
+            has_fields: ['payload.http.request.headers.x-forwarded-for-extracted']
           tokenizer: "%{payload.http.request.client_ip}, %{ip2}, %{ip3}"
           field: "payload.http.request.headers.x-forwarded-for-extracted"
           target_prefix: ""
           ignore_failure: true
           trim_values: all
-      - drop_fields:
-          fields: ["ip2", "ip3"]
-          ignore_missing: true
       - extract_array:
           when:
             has_fields: ['payload.http.request.headers.user-agent']
@@ -92,6 +91,9 @@ processors:
           ignore_missing: true
           mappings:
             payload.http.request.headers.user-agent-extracted: 0
+      - drop_fields:
+          fields: ["ip2", "ip3", "payload.http.request.headers.x-forwarded-for", "payload.http.request.headers.user-agent"]
+          ignore_missing: true
       - rename:
           fields:
             - from: "payload"
