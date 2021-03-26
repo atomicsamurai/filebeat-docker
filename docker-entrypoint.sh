@@ -9,6 +9,8 @@ cd /opt/filebeat
 
 TEMPLATE_FILE="filebeat.yml.template"
 CONFIG_FILE="filebeat.yml"
+
+if [[ -z "${LOG_START_TIME}" ]]; then
 cat >$TEMPLATE_FILE <<EOF
 filebeat.inputs:
 - type: httpjson
@@ -21,6 +23,28 @@ filebeat.inputs:
     - set:
         target: url.params.source
         value: '##LOG_SOURCE##'
+EOF
+else
+cat >$TEMPLATE_FILE <<EOF
+filebeat.inputs:
+- type: httpjson
+  interval: 2s
+  config_version: 2
+  request.url: ##ORIGIN##/monitoring/logs
+  auth.basic:
+    user: ##API_KEY_ID##
+    password: ##API_KEY_SECRET##
+  request.transforms:
+    - set:
+        target: url.params.source
+        value: '##LOG_SOURCE##'
+    - set:
+        target: url.params.beginTime
+        value: '##LOG_START_TIME##'
+EOF
+fi
+
+cat >>$TEMPLATE_FILE <<EOF
     - set:
         target: url.params._pagedResultsCookie
         value: '[[.last_response.body.pagedResultsCookie]]'
@@ -96,6 +120,12 @@ processors:
           ignore_missing: true
       - rename:
           fields:
+              - from: "payload.response.detail"
+                to: "payload.response.message"
+          ignore_missing: true
+          fail_on_error: false
+      - rename:
+          fields:
             - from: "payload"
               to: "json_payload"
           ignore_missing: false
@@ -120,7 +150,8 @@ sed \
     -e "s@##API_KEY_ID##@$API_KEY_ID@g" \
     -e "s@##API_KEY_SECRET##@$API_KEY_SECRET@g" \
     -e "s@##LOG_SOURCE##@$LOG_SOURCE@g" \
-    $TEMPLATE_FILE >>$CONFIG_FILE
+    -e "s@##LOG_START_TIME##@$LOG_START_TIME@g" \
+    $TEMPLATE_FILE >$CONFIG_FILE
 
 #./filebeat -e -c $CONFIG_FILE
 #rm -f $CONFIG_FILE

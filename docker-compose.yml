@@ -23,4 +23,4 @@ services:
       API_KEY_ID: "${API_KEY_ID}"
       API_KEY_SECRET: "${API_KEY_SECRET}"
       LOG_SOURCE: "${LOG_SOURCE}"
-
+      LOG_START_TIME: "${LOG_START_TIME}"
