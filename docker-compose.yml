@@ -3,13 +3,9 @@ services:
   elk:
     image: sandeepc0/elk-fidc
     container_name: elk-forgerock-idcloud
-    deploy:
-      resources:
-        limits:
-          memory: 8G
     environment:
-      ES_HEAP_SIZE: "4G"
-      LOGSTASH_START: "0"
+      - ES_HEAP_SIZE="4G"
+      - LOGSTASH_START="0"
     ports:
       - "5601:5601"
       - "9200:9200"
@@ -18,9 +14,11 @@ services:
     image: sandeepc0/filebeat-fidc
     container_name: filebeat-forgerock-idcloud
     environment:
-      TOGGLE_FOR_RESTART: "yes"
-      ORIGIN: "${ORIGIN}"
-      API_KEY_ID: "${API_KEY_ID}"
-      API_KEY_SECRET: "${API_KEY_SECRET}"
-      LOG_SOURCE: "${LOG_SOURCE}"
-      LOG_START_TIME: "${LOG_START_TIME}"
+      - TOGGLE_FOR_RESTART
+      - FIDC_ORIGIN
+      - FIDC_API_KEY_ID
+      - FIDC_API_KEY_SECRET
+      - FIDC_LOG_SOURCE
+      - FIDC_LOG_START_TIME         # optional: only needed when pulling historical logs (not tailing)
+      - FIDC_PULL_INTERVAL          # optional: default 10s (this is only used when FIDC_LOG_START_TIME is used)
+      - FIDC_LOG_REQUEST_TIMEOUT    # optional: default 1m

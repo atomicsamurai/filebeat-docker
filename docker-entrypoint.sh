@@ -5,6 +5,15 @@
 # set -x
 # set -e
 
+# These are the env vars
+# FIDC_ORIGIN
+# FIDC_API_KEY_ID
+# FIDC_API_KEY_SECRET
+# FIDC_LOG_SOURCE
+# FIDC_LOG_START_TIME
+# FIDC_PULL_INTERVAL
+# FIDC_LOG_REQUEST_TIMEOUT
+
 cd /opt/filebeat
 
 TEMPLATE_FILE="filebeat.yml.template"
@@ -15,43 +24,47 @@ cat >$TEMPLATE_FILE <<EOF
 filebeat.inputs:
 - type: httpjson
   config_version: 2
-  request.url: ##ORIGIN##/monitoring/logs/tail
   auth.basic:
     user: ##API_KEY_ID##
     password: ##API_KEY_SECRET##
-  request.transforms:
-    - set:
-        target: url.params.source
-        value: '##LOG_SOURCE##'
+  request:
+    timeout: ##FIDC_LOG_REQUEST_TIMEOUT##
+    url: ##ORIGIN##/monitoring/logs/tail
+    transforms:
+      - set:
+          target: url.params.source
+          value: '##LOG_SOURCE##'
 EOF
 else
 cat >$TEMPLATE_FILE <<EOF
 filebeat.inputs:
 - type: httpjson
-  interval: 2s
+  interval: ##FIDC_PULL_INTERVAL##
   config_version: 2
-  request.url: ##ORIGIN##/monitoring/logs
   auth.basic:
     user: ##API_KEY_ID##
     password: ##API_KEY_SECRET##
-  request.transforms:
-    - set:
-        target: url.params.source
-        value: '##LOG_SOURCE##'
-    - set:
-        target: url.params.beginTime
-        value: '##LOG_START_TIME##'
+  request:
+    timeout: ##FIDC_LOG_REQUEST_TIMEOUT##
+    url: ##ORIGIN##/monitoring/logs
+    transforms:
+      - set:
+          target: url.params.source
+          value: '##LOG_SOURCE##'
+      - set:
+          target: url.params.beginTime
+          value: '##LOG_START_TIME##'
 EOF
 fi
 
 cat >>$TEMPLATE_FILE <<EOF
-    - set:
-        target: url.params._pagedResultsCookie
-        value: '[[.last_response.body.pagedResultsCookie]]'
-  request.rate_limit:
-    limit: '[[.last_response.header.Get "x-ratelimit-limit"]]'
-    remaining: '[[.last_response.header.Get "x-ratelimit-remaining"]]'
-    reset: '[[.last_response.header.Get "x-ratelimit-reset"]]'
+      - set:
+          target: url.params._pagedResultsCookie
+          value: '[[.last_response.body.pagedResultsCookie]]'
+    rate_limit:
+      limit: '[[.last_response.header.Get "x-ratelimit-limit"]]'
+      remaining: '[[.last_response.header.Get "x-ratelimit-remaining"]]'
+      reset: '[[.last_response.header.Get "x-ratelimit-reset"]]'
   response.split:
     target: body.result
     type: array
@@ -146,11 +159,13 @@ EOF
 
 # set values in config file from env vars
 sed \
-    -e "s@##ORIGIN##@$ORIGIN@g" \
-    -e "s@##API_KEY_ID##@$API_KEY_ID@g" \
-    -e "s@##API_KEY_SECRET##@$API_KEY_SECRET@g" \
-    -e "s@##LOG_SOURCE##@$LOG_SOURCE@g" \
-    -e "s@##LOG_START_TIME##@$LOG_START_TIME@g" \
+    -e "s@##FIDC_LOG_REQUEST_TIMEOUT##@${FIDC_LOG_REQUEST_TIMEOUT:-1m}@g" \
+    -e "s@##FIDC_PULL_INTERVAL##@${FIDC_PULL_INTERVAL:-10s}@g" \
+    -e "s@##ORIGIN##@$FIDC_ORIGIN@g" \
+    -e "s@##API_KEY_ID##@$FIDC_API_KEY_ID@g" \
+    -e "s@##API_KEY_SECRET##@$FIDC_API_KEY_SECRET@g" \
+    -e "s@##LOG_SOURCE##@$FIDC_LOG_SOURCE@g" \
+    -e "s@##LOG_START_TIME##@$FIDC_LOG_START_TIME@g" \
     $TEMPLATE_FILE >$CONFIG_FILE
 
 #./filebeat -e -c $CONFIG_FILE
