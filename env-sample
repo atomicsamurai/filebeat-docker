@@ -1,0 +1,7 @@
+export FIDC_ORIGIN="https://<tenant url>"
+export FIDC_API_KEY_ID="67xxxxxxxxxxxxxxxxxxxxxxxxxxx221"
+export FIDC_API_KEY_SECRET="acxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxd6"
+export FIDC_LOG_SOURCE="idm-sync,am-access,am-authentication,idm-core,am-core"
+export FIDC_LOG_START_TIME="2021-03-10T00:00:00Z" # optional: only needed when pulling historical logs (not tailing)
+export FIDC_PULL_INTERVAL="10s"                   # optional: default 10s (this is only used when FIDC_LOG_START_TIME is used)
+export FIDC_LOG_REQUEST_TIMEOUT="1m"              # optional: default 1m
