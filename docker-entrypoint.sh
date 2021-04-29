@@ -11,6 +11,7 @@
 # FIDC_API_KEY_SECRET
 # FIDC_LOG_SOURCE
 # FIDC_LOG_START_TIME
+# FIDC_LOG_END_TIME
 # FIDC_PULL_INTERVAL
 # FIDC_LOG_REQUEST_TIMEOUT
 
@@ -19,7 +20,7 @@ cd /opt/filebeat
 TEMPLATE_FILE="filebeat.yml.template"
 CONFIG_FILE="filebeat.yml"
 
-if [[ -z "${LOG_START_TIME}" ]]; then
+if [[ -z "${FIDC_LOG_START_TIME}" ]]; then
 cat >$TEMPLATE_FILE <<EOF
 filebeat.inputs:
 - type: httpjson
@@ -55,6 +56,13 @@ filebeat.inputs:
           target: url.params.beginTime
           value: '##LOG_START_TIME##'
 EOF
+if [[ ! -z "${FIDC_LOG_END_TIME}" ]]; then
+cat >>$TEMPLATE_FILE <<EOF
+      - set:
+          target: url.params.endTime
+          value: '##LOG_END_TIME##'
+EOF
+fi
 fi
 
 cat >>$TEMPLATE_FILE <<EOF
@@ -166,6 +174,7 @@ sed \
     -e "s@##API_KEY_SECRET##@$FIDC_API_KEY_SECRET@g" \
     -e "s@##LOG_SOURCE##@$FIDC_LOG_SOURCE@g" \
     -e "s@##LOG_START_TIME##@$FIDC_LOG_START_TIME@g" \
+    -e "s@##LOG_END_TIME##@$FIDC_LOG_END_TIME@g" \
     $TEMPLATE_FILE >$CONFIG_FILE
 
 #./filebeat -e -c $CONFIG_FILE
