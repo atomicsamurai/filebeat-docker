@@ -6,8 +6,11 @@ This repository contains sample filebeat configurations for use with ForgeRock I
 ## Run standalone
 1. Download and unzip [filebeat](https://www.elastic.co/downloads/beats/filebeat) (for example, to `/opt/filebeat`)
 2. Modify one of the filebeat sample configurations with your tenant details (URL, API key/secret), and other parameters if needed (save it to, for example, `/opt/filebeat/filebeat.yml`). There are two samples:
+
     a. `filebeat-tail-sample.yml`: this "tails" the logs
+    
     b. `filebeat-timeperiod-sample.yml`: this will get logs between a set `beginTime` and `endTime`. You will need to update these in the sample yml to your desired values.
+
 3. Run filebeat with this configuration
 ```
 $ /opt/filebeat/filebeat -e -c /opt/filebeat/filebeat.yml
