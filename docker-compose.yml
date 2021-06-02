@@ -1,15 +1,5 @@
 version: '3.7'
 services:
-  elk:
-    image: sandeepc0/elk-fidc
-    container_name: elk-forgerock-idcloud
-    environment:
-      - ES_HEAP_SIZE="4G"
-      - LOGSTASH_START="0"
-    ports:
-      - "5601:5601"
-      - "9200:9200"
-      - "5044:5044"
   filebeat:
     image: sandeepc0/filebeat-fidc
     container_name: filebeat-forgerock-idcloud

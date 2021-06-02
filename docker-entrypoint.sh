@@ -24,6 +24,7 @@ if [[ -z "${FIDC_LOG_START_TIME}" ]]; then
 cat >$TEMPLATE_FILE <<EOF
 filebeat.inputs:
 - type: httpjson
+  interval: ##FIDC_PULL_INTERVAL##
   config_version: 2
   auth.basic:
     user: ##API_KEY_ID##
@@ -151,18 +152,11 @@ processors:
               to: "json_payload"
           ignore_missing: false
           fail_on_error: true
-output.elasticsearch:
-  hosts: ["http://elk:9200"]
-  pipeline: geoip-and-useragent
-setup.template:
-  type: "index"
-  append_fields:
-    - name: json_payload
-      type: object
-    - name: text_payload
-      type: text
-    - name: geoip.location
-      type: geo_point
+output.console:
+  pretty: true
+
+logging.level: error
+logging.to_stderr: true
 EOF
 
 # set values in config file from env vars
@@ -179,22 +173,6 @@ sed \
 
 #./filebeat -e -c $CONFIG_FILE
 #rm -f $CONFIG_FILE
-
-# wait for Kibana
-if [ -z "$KIBANA_URL" ]; then
-    KIBANA_URL=http://elk:5601
-fi
-counter=0
-echo "Will wait for 60s for Kibana to start ..."
-while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${KIBANA_URL}/api/status)" != "200" && $counter -lt 60 ]]; do
-    sleep 1
-    ((counter++))
-    echo "waiting for Kibana to respond ($counter/60)"
-done
-if [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${KIBANA_URL}/api/status)" != "200" ]]; then
-    echo "Timed out waiting for Kibana to respond. Exiting."
-    exit 1
-fi
 
 # Add filebeat as command if needed
 if [ "${1:0:1}" = '-' ]; then
