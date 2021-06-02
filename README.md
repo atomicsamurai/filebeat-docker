@@ -35,7 +35,7 @@ export FIDC_PULL_INTERVAL="10s"                   # optional: default 10s (this 
 export FIDC_LOG_REQUEST_TIMEOUT="1m"              # optional: default 1m
 ```
 
-Or, download [env-sample](https://raw.githubusercontent.com/atomicsamurai/filebeat-docker/main/env-sample)
+Or, download [env-sample](https://raw.githubusercontent.com/atomicsamurai/filebeat-docker/standalone/env-sample)
 
 ---
 ** NOTE **
