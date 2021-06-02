@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   filebeat:
-    image: sandeepc0/filebeat-fidc
+    image: sandeepc0/filebeat-fidc:standalone
     container_name: filebeat-forgerock-idcloud
     environment:
       - TOGGLE_FOR_RESTART

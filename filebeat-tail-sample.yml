@@ -1,0 +1,104 @@
+filebeat.inputs:
+- type: httpjson
+  interval: 5s
+  config_version: 2
+  auth.basic:
+    user: "***** API KEY *****"
+    password: "***** API SECRET *****"
+  request:
+    timeout: 1m
+    url: "https://<***** Your ID Cloud Tenant *****>/monitoring/logs/tail"
+    transforms:
+      - set:
+          target: url.params.source
+          value: 'idm-access,am-core'
+      - set:
+          target: url.params._pagedResultsCookie
+          value: '[[.last_response.body.pagedResultsCookie]]'
+    rate_limit:
+      limit: '[[.last_response.header.Get "x-ratelimit-limit"]]'
+      remaining: '[[.last_response.header.Get "x-ratelimit-remaining"]]'
+      reset: '[[.last_response.header.Get "x-ratelimit-reset"]]'
+  response.split:
+    target: body.result
+    type: array
+    transforms:
+      - set:
+          target: body.tenant
+          value: 'https://openam-useast1-agu-dev.id.forgerock.io'
+processors:
+  - decode_json_fields:
+      fields: ["message"]
+      process_array: true
+      max_depth: 5
+      target: ""
+      overwrite_keys: true
+      add_error_key: true
+  - timestamp:
+      field: timestamp
+      ignore_failure: false
+      layouts:
+        - '2006-01-02T15:04:05.999999999Z'
+      test:
+        - '2021-03-16T16:39:40.410894588Z'
+  - drop_fields:
+      fields: ["timestamp"]
+  - if:
+      contains:
+        type: "text"
+    then:
+      - rename:
+          fields:
+            - from: "payload"
+              to: "text_payload"
+          ignore_missing: false
+          fail_on_error: true
+    else:
+      - drop_event:
+          when:
+            equals:
+              payload.userId: "id=amadmin,ou=user,ou=am-config"
+      - extract_array:
+          when:
+            has_fields: ['payload.http.request.headers.x-forwarded-for']
+          field: payload.http.request.headers.x-forwarded-for
+          fail_on_error: false
+          ignore_missing: true
+          mappings:
+            payload.http.request.headers.x-forwarded-for-extracted: 0
+      - dissect:
+          when:
+            has_fields: ['payload.http.request.headers.x-forwarded-for-extracted']
+          tokenizer: "%{payload.http.request.client_ip}, %{ip2}, %{ip3}"
+          field: "payload.http.request.headers.x-forwarded-for-extracted"
+          target_prefix: ""
+          ignore_failure: true
+          trim_values: all
+      - extract_array:
+          when:
+            has_fields: ['payload.http.request.headers.user-agent']
+          field: payload.http.request.headers.user-agent
+          fail_on_error: false
+          ignore_missing: true
+          mappings:
+            payload.http.request.headers.user-agent-extracted: 0
+      - drop_fields:
+          fields: ["ip2", "ip3", "payload.http.request.headers.x-forwarded-for", "payload.http.request.headers.user-agent"]
+          ignore_missing: true
+      - rename:
+          fields:
+              - from: "payload.response.detail"
+                to: "payload.response.message"
+          ignore_missing: true
+          fail_on_error: false
+      - rename:
+          fields:
+            - from: "payload"
+              to: "json_payload"
+          ignore_missing: false
+          fail_on_error: true
+output.console:
+  pretty: true
+
+logging.level: error
+logging.to_stderr: true
