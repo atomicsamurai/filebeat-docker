@@ -24,6 +24,7 @@ if [[ -z "${FIDC_LOG_START_TIME}" ]]; then
 cat >$TEMPLATE_FILE <<EOF
 filebeat.inputs:
 - type: httpjson
+  interval: ##FIDC_PULL_INTERVAL##
   config_version: 2
   auth.basic:
     user: ##API_KEY_ID##
