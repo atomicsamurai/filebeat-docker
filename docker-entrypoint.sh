@@ -109,6 +109,21 @@ processors:
           ignore_missing: false
           fail_on_error: true
     else:
+      - if:
+          regexp:
+            payload.message: "^{.*"
+        then:
+          - rename:
+              fields:
+                - from: "payload.message"
+                  to: "payload.message_object"
+              ignore_missing: false
+              fail_on_error: true
+          - decode_json_fields:
+              fields: ["payload.message_object"]
+              target: ""
+              overwrite_keys: true
+              add_error_key: true
       - drop_event:
           when:
             equals:
@@ -160,6 +175,8 @@ setup.template:
   append_fields:
     - name: json_payload
       type: object
+    # - name: json_payload.message_object
+    #   type: object
     - name: text_payload
       type: text
     - name: geoip.location
