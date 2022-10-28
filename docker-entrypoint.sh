@@ -106,6 +106,8 @@ processors:
           fields:
             - from: "payload"
               to: "text_payload"
+            - from: "source"
+              to: "fidc_source"
           ignore_missing: false
           fail_on_error: true
     else:
@@ -150,6 +152,8 @@ processors:
           fields:
             - from: "payload"
               to: "json_payload"
+            - from: "source"
+              to: "fidc_source"
           ignore_missing: false
           fail_on_error: true
 output.elasticsearch:
