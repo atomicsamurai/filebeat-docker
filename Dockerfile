@@ -1,11 +1,10 @@
 FROM debian:jessie
 
-LABEL original="https://github.com/primait/docker-filebeat"
+LABEL original="https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-8.8.0-linux-x86_64.tar.gz"
 LABEL modifiedby="Sandeep Chaturvedi <sandeep.chaturvedi@forgerock.com>"
-LABEL description="filebeat docker image for ForgeRock Identity Cloud logs"
+LABEL description="filebeat v8.8.0 docker image for ForgeRock Identity Cloud logs"
 
-ENV FILEBEAT_VERSION=7.11.1 \
-    FILEBEAT_SHA1=3b12c7208707e627bc26964b1b07702bc788961e63f0187830dd5cd6dc9120178f29d04b42c5ff2ede44cc0810e6a592eb93736513af5d2dca92379334b51655
+ENV FILEBEAT_VERSION=8.8.0 
 
 RUN set -x && \
   apt-get update && \
