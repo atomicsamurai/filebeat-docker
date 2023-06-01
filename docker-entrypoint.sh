@@ -159,6 +159,7 @@ processors:
 output.elasticsearch:
   hosts: ["http://elk:9200"]
   pipeline: geoip-and-useragent
+  allow_older_versions: true
 setup.template:
   type: "index"
   append_fields:
