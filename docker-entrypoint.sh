@@ -15,7 +15,7 @@
 # FIDC_PULL_INTERVAL
 # FIDC_LOG_REQUEST_TIMEOUT
 
-#cd /opt/filebeat
+cd /opt/filebeat
 
 TEMPLATE_FILE="filebeat.yml.template"
 CONFIG_FILE="filebeat.yml"
