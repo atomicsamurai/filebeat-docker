@@ -15,7 +15,7 @@
 # FIDC_PULL_INTERVAL
 # FIDC_LOG_REQUEST_TIMEOUT
 
-cd /opt/filebeat
+#cd /opt/filebeat
 
 TEMPLATE_FILE="filebeat.yml.template"
 CONFIG_FILE="filebeat.yml"
@@ -26,9 +26,6 @@ filebeat.inputs:
 - type: httpjson
   interval: ##FIDC_PULL_INTERVAL##
   config_version: 2
-  auth.basic:
-    user: ##API_KEY_ID##
-    password: ##API_KEY_SECRET##
   request:
     timeout: ##FIDC_LOG_REQUEST_TIMEOUT##
     url: ##ORIGIN##/monitoring/logs/tail
@@ -36,6 +33,12 @@ filebeat.inputs:
       - set:
           target: url.params.source
           value: '##LOG_SOURCE##'
+      - set:
+          target: header.x-api-key
+          value: '##API_KEY_ID##'
+      - set:
+          target: header.x-api-secret
+          value: '##API_KEY_SECRET##'	          
 EOF
 else
 cat >$TEMPLATE_FILE <<EOF
