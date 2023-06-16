@@ -1,11 +1,14 @@
-FROM debian:jessie
+# replace with master-arm64 for ARM64
+ARG IMAGE=focal-1.1.0
 
-LABEL original="https://github.com/primait/docker-filebeat"
+FROM phusion/baseimage:${IMAGE}
+
+LABEL original="https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-8.8.0-linux-x86_64.tar.gz"
 LABEL modifiedby="Sandeep Chaturvedi <sandeep.chaturvedi@forgerock.com>"
-LABEL description="filebeat docker image for ForgeRock Identity Cloud logs"
+LABEL description="filebeat v8.8.0 docker image for ForgeRock Identity Cloud logs"
 
-ENV FILEBEAT_VERSION=7.11.1 \
-    FILEBEAT_SHA1=3b12c7208707e627bc26964b1b07702bc788961e63f0187830dd5cd6dc9120178f29d04b42c5ff2ede44cc0810e6a592eb93736513af5d2dca92379334b51655
+ENV FILEBEAT_VERSION=8.8.0 \
+    FILEBEAT_SHA1=301799568893c5812e8cf03b71e1dc9d8bace23aa0dcc0b7aa8a54507493498ddc3360718bd41b96f7da7a9e38aec042ca16d5eaeaac11e44ba7c9dca775c4b1
 
 RUN set -x && \
   apt-get update && \
