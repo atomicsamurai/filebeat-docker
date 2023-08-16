@@ -4,7 +4,7 @@ services:
     image: sandeepc0/elk-fidc
     container_name: elk-forgerock-idcloud
     environment:
-      - ES_HEAP_SIZE="4G"
+      - ES_HEAP_SIZE=4G
       - LOGSTASH_START="0"
     ports:
       - "5601:5601"
